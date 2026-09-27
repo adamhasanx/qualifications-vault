@@ -11,10 +11,18 @@ export interface ParsedQualification {
   neverExpires: boolean;
 }
 
+interface ParseCertificateOptions {
+  base64: string;
+  mediaType: string;
+}
+
 export async function parseCertificate(
-  base64Data: string,
-  mimeType: string
+  input: ParseCertificateOptions | string,
+  maybeMediaType?: string
 ): Promise<ParsedQualification> {
+  const base64Data = typeof input === "string" ? input : input.base64;
+  const mimeType = typeof input === "string" ? (maybeMediaType || "application/pdf") : input.mediaType;
+
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
     generationConfig: {
