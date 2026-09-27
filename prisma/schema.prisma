@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  name           String?
+  image          String?
+  qualifications Qualification[]
+  createdAt      DateTime        @default(now())
+}
+
+model Qualification {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseName   String
+  issuer       String
+  level        String?
+  issueDate    DateTime
+  expiryDate   DateTime?
+  neverExpires Boolean  @default(false)
+  fileUrl      String
+  fileType     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
