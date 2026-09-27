@@ -79,8 +79,3 @@ When someone uploads a certificate, `/api/upload`:
   should work.
 - Set `NEXTAUTH_URL` to your real domain, and add that domain's callback URL in the Google
   Cloud Console.
-
-## Design
-White base, soft lilac/blue accents for the interface chrome, with a green / amber / red
-status system (borrowed from lifeguard and medical signage) marking each certificate as active,
-expiring soon, or expired. Rounded corners and Plus Jakarta Sans throughout for a soft, legible feel.
