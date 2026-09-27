@@ -16,8 +16,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
   try {
     const buffer = await downloadFromWebdav(qualification.fileUrl);
-    return new NextResponse(buffer, {
-      headers: {
+    return new NextResponse(new Uint8Array(buffer), {
+    headers: {
         "Content-Type": qualification.fileType,
         "Cache-Control": "private, max-age=0, no-store",
       },
