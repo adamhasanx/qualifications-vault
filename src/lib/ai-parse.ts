@@ -1,86 +1,59 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI, Type } from "@google/genai";
 
-export type ParsedCertificate = {
-  courseName: string | null;
-  issuer: string | null;
-  level: string | null;
-  issueDate: string | null; // ISO yyyy-mm-dd
-  expiryDate: string | null; // ISO yyyy-mm-dd
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+export interface ParsedQualification {
+  courseName: string;
+  issuer: string;
+  level?: string;
+  issueDate: string; // YYYY-MM-DD
+  expiryDate?: string; // YYYY-MM-DD
   neverExpires: boolean;
-  confidence: "high" | "medium" | "low";
-};
-
-const SYSTEM_PROMPT = `You read certificate and qualification documents (images or PDFs) and extract structured data.
-Respond with ONLY a JSON object, no prose, no markdown fences, matching exactly this shape:
-{
-  "courseName": string | null,
-  "issuer": string | null,
-  "level": string | null,
-  "issueDate": string | null,
-  "expiryDate": string | null,
-  "neverExpires": boolean,
-  "confidence": "high" | "medium" | "low"
 }
-Rules:
-- Dates must be ISO format YYYY-MM-DD. If only a month/year is given, use the 1st of that month.
-- "level" is the qualification level/grade if the certificate states one (e.g. "Level 2", "Advanced", "Pass"), else null.
-- Set "neverExpires" to true only if the certificate explicitly states it does not expire, or is a type of certificate that is commonly lifetime (e.g. a degree). Otherwise false.
-- If "neverExpires" is true, "expiryDate" should be null.
-- If a field truly cannot be determined, use null rather than guessing.
-- "confidence" reflects how legible/certain the extraction was overall.`;
 
-export async function parseCertificate(params: {
-  base64: string;
-  mediaType: string; // e.g. image/png, image/jpeg, application/pdf
-}): Promise<ParsedCertificate> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY is not configured on the server.");
-  }
-  const anthropic = new Anthropic({ apiKey });
+export async function parseCertificate(
+  base64Data: string,
+  mimeType: string
+): Promise<ParsedQualification> {
+  const prompt = `You are a certificate parsing assistant. Extract the qualification details from this document. 
+Return only structured JSON matching the requested schema. If dates are unclear, provide your best estimate in YYYY-MM-DD format.`;
 
-  const isPdf = params.mediaType === "application/pdf";
-
-  const content: Anthropic.MessageParam["content"] = [
-    isPdf
-      ? {
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data: params.base64 },
-        }
-      : {
-          type: "image",
-          source: { type: "base64", media_type: params.mediaType as "image/png" | "image/jpeg", data: params.base64 },
+  const response = await ai.models.generateContent({
+    model: "gemini-1.5-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType,
+            },
+          },
+          { text: prompt },
+        ],
+      },
+    ],
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          courseName: { type: Type.STRING },
+          issuer: { type: Type.STRING },
+          level: { type: Type.STRING },
+          issueDate: { type: Type.STRING },
+          expiryDate: { type: Type.STRING },
+          neverExpires: { type: Type.BOOLEAN },
         },
-    {
-      type: "text",
-      text: "Extract the qualification details from this certificate.",
+        required: ["courseName", "issuer", "issueDate", "neverExpires"],
+      },
     },
-  ];
-
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 500,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content }],
   });
 
-  const textBlock = response.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("AI parsing returned no text.");
+  if (!response.text) {
+    throw new Error("Failed to parse document with Gemini");
   }
 
-  const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
-  try {
-    return JSON.parse(cleaned) as ParsedCertificate;
-  } catch {
-    return {
-      courseName: null,
-      issuer: null,
-      level: null,
-      issueDate: null,
-      expiryDate: null,
-      neverExpires: false,
-      confidence: "low",
-    };
-  }
+  return JSON.parse(response.text) as ParsedQualification;
 }
