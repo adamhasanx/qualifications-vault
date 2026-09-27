@@ -1,6 +1,6 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export interface ParsedQualification {
   courseName: string;
@@ -15,45 +15,42 @@ export async function parseCertificate(
   base64Data: string,
   mimeType: string
 ): Promise<ParsedQualification> {
-  const prompt = `You are a certificate parsing assistant. Extract the qualification details from this document. 
-Return only structured JSON matching the requested schema. If dates are unclear, provide your best estimate in YYYY-MM-DD format.`;
-
-  const response = await ai.models.generateContent({
+  const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            inlineData: {
-              data: base64Data,
-              mimeType: mimeType,
-            },
-          },
-          { text: prompt },
-        ],
-      },
-    ],
-    config: {
+    generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
-        type: Type.OBJECT,
+        type: SchemaType.OBJECT,
         properties: {
-          courseName: { type: Type.STRING },
-          issuer: { type: Type.STRING },
-          level: { type: Type.STRING },
-          issueDate: { type: Type.STRING },
-          expiryDate: { type: Type.STRING },
-          neverExpires: { type: Type.BOOLEAN },
+          courseName: { type: SchemaType.STRING },
+          issuer: { type: SchemaType.STRING },
+          level: { type: SchemaType.STRING },
+          issueDate: { type: SchemaType.STRING },
+          expiryDate: { type: SchemaType.STRING },
+          neverExpires: { type: SchemaType.BOOLEAN },
         },
         required: ["courseName", "issuer", "issueDate", "neverExpires"],
       },
     },
   });
 
-  if (!response.text) {
-    throw new Error("Failed to parse document with Gemini");
+  const prompt = `You are an expert certificate parser. Extract qualification details from this document.
+Format all dates strictly as YYYY-MM-DD. Set neverExpires to true if there is no expiration date.`;
+
+  const result = await model.generateContent([
+    prompt,
+    {
+      inlineData: {
+        data: base64Data,
+        mimeType: mimeType,
+      },
+    },
+  ]);
+
+  const responseText = result.response.text();
+  if (!responseText) {
+    throw new Error("Empty response from Gemini parser");
   }
 
-  return JSON.parse(response.text) as ParsedQualification;
+  return JSON.parse(responseText) as ParsedQualification;
 }
