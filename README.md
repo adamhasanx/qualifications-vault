@@ -78,4 +78,4 @@ When someone uploads a certificate, `/api/upload`:
   future "generate a temporary view link" endpoint once you decide how public profile viewing
   should work.
 - Set `NEXTAUTH_URL` to your real domain, and add that domain's callback URL in the Google
-  Cloud Console.
+  Cloud Console. /
