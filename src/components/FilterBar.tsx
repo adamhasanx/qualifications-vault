@@ -1,6 +1,6 @@
 "use client";
 
-import { SortKey, StatusFilter } from "@/types";
+import { SortKey, StatusFilter } from "../types";
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "expiry", label: "Soonest expiring" },
