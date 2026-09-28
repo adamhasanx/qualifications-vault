@@ -1,6 +1,6 @@
 "use client";
 
-import { Qualification } from "@/types";
+import { Qualification } from "../types";
 
 export default function PreviewModal({ qualification, onClose }: { qualification: Qualification; onClose: () => void }) {
   const isPdf = qualification.fileType === "application/pdf";
