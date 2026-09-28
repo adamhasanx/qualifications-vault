@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
-import { Qualification, SortKey, StatusFilter, getStatus } from "@/types";
+import { Qualification, SortKey, StatusFilter, getStatus } from "../types";
 import FilterBar from "./FilterBar";
 import QualificationCard from "./QualificationCard";
 import UploadModal from "./UploadModal";
