@@ -74,7 +74,7 @@ When someone uploads a certificate, `/api/upload`:
 - **Database**: change `provider = "sqlite"` to `"postgresql"` in `prisma/schema.prisma`, point
   `DATABASE_URL` at a real Postgres instance (Supabase, Neon, Railway all have free tiers), then
   run `npx prisma db push` again.
-- **Sharing**: the Share button is intentionally disabled for now — it's ready to wire up to a
+- **Sharing**: the Share button is intentionally disabled for now — it's ready to wire up to 
   future "generate a temporary view link" endpoint once you decide how public profile viewing
   should work.
 - Set `NEXTAUTH_URL` to your real domain, and add that domain's callback URL in the Google
