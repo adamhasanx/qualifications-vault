@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Qualification, getStatus } from "@/types";
+import { Qualification, getStatus } from "../types";
 
 const STATUS_STYLES = {
   active: { dot: "bg-valid", badge: "bg-valid-soft text-valid", label: "Active" },
